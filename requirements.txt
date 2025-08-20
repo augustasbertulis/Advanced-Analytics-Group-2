@@ -1,5 +1,3 @@
-pythong version: 3.11
-Packages:
-- numpy
-- pandas
-- re
+numpy
+pandas
+python_version == "3.11"
