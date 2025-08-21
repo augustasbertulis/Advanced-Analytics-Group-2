@@ -1,70 +1,91 @@
-import pandas as pd, re
+import pandas as pd
+import re
 import os
 
 # File paths
-input_file = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\raw data\steam-insights-main\steamspy_insights\steamspy_insights.csv"
-output_file = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\processed data\steamspy_insights_cleaned.xlsx"
+INPUT_FILE = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\raw data\steam-insights-main\steamspy_insights\steamspy_insights.csv"
+OUTPUT_FILE = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\processed data\steamspy_insights_cleaned.xlsx"
+
 
 def split_range(s):
+    """Splits a string like '1,000 .. 5,000' into [1000, 5000]."""
     if pd.isna(s):
-        return None
-    m = re.match(r"\s*([0-9,._ ]+)\s*\.\.\s*([0-9,._ ]+)\s*$", str(s))
-    if not m: 
         return pd.Series([pd.NA, pd.NA])
-    def norm(x):
-        x = re.sub(r"[^\d]", "", x)
-        return pd.to_numeric(x, errors="coerce").astype("Int64")
-    return pd.Series([norm(m.group(1)), norm(m.group(2))])
+
+    match = re.match(r"\s*([\d,._ ]+)\s*\.\.\s*([\d,._ ]+)\s*$", str(s))
+    if not match:
+        return pd.Series([pd.NA, pd.NA])
+
+    def normalize(x):
+        return pd.to_numeric(re.sub(r"[^\d]", "", x), errors="coerce")
+
+    return pd.Series([normalize(match.group(1)), normalize(match.group(2))])
+
 
 def clean_steamspy_data(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Cleans the steamspy dataframe by:
-    1. Removing rows where app_id is None or '\\N'
-    2. Transforming '\\N' and '0' in developer/publisher into None
-    3. Removing rows where BOTH developer and publisher are None
-    Prints a summary of rows removed for each condition.
-    """
-    # Normalize missing values (\N → None, "0" → None)
-    df = df.replace({"\\N": None, "0": None})
+    """Cleans the SteamSpy dataset."""
 
-    # Count rows with missing app_id before removing
+    # === Normalize missing values ===
+    missing_values = {"\\N", "0", "(none)", "none", "None", "-"}
+    df = df.replace(list(missing_values), pd.NA)
+
+    # === Remove rows with missing app_id ===
     missing_app_id_count = df["app_id"].isna().sum()
+    df = df.dropna(subset=["app_id"])
 
-    # Drop rows with missing app_id
-    df = df[df["app_id"].notna()]
-
-    # Count rows with BOTH developer and publisher missing before removing
+    # === Remove rows where both developer and publisher are missing ===
     missing_dev_pub_count = ((df["developer"].isna()) & (df["publisher"].isna())).sum()
+    df = df.dropna(subset=["developer", "publisher"], how='all')
 
-    # Drop rows where BOTH developer and publisher are missing
-    df = df[~(df["developer"].isna() & df["publisher"].isna())]
+    # === Fill missing publishers based on developer ===
+    dev_pub_map = (
+        df.dropna(subset=["publisher"])
+        .groupby("developer")["publisher"]
+        .agg(lambda x: x.mode().iat[0] if not x.mode().empty else x.iloc[0])
+    )
 
+    missing_publisher_before = df["publisher"].isna().sum()
+    mask = df["publisher"].isna() & df["developer"].notna()
+    df.loc[mask, "publisher"] = df.loc[mask, "developer"].map(dev_pub_map)
+    filled_publishers = missing_publisher_before - df["publisher"].isna().sum()
 
+    # === Remove any remaining rows with missing publisher ===
+    removed_after_mapping = df["publisher"].isna().sum()
+    df = df.dropna(subset=["publisher"])
 
-    # Print summary
+    # === Convert price-related columns to decimal ===
+    for col in ["price", "initial_price", "discount"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce") / 100
+
+    # === Print summary ===
     print(f"Rows removed due to missing app_id: {missing_app_id_count}")
     print(f"Rows removed due to missing developer and publisher: {missing_dev_pub_count}")
+    print(f"Publishers filled from developer mapping: {filled_publishers}")
+    print(f"Rows removed due to missing publisher after mapping: {removed_after_mapping}")
     print(f"Remaining rows after cleaning: {len(df)}")
 
     return df
 
 
-
 def main():
-    # Read the CSV file while handling messy formatting:
-    # - on_bad_lines="skip" → skips rows with the wrong number of columns instead of raising an error
-    df = pd.read_csv(input_file, sep=";", on_bad_lines="skip")
+    # Read CSV
+    df = pd.read_csv(INPUT_FILE, sep=",", quotechar='"', on_bad_lines="skip")
 
     # Clean data
     cleaned_df = clean_steamspy_data(df)
-    cleaned_df[["owners_min","owners_max"]] = cleaned_df["owners_range"].apply(split_range)
+
+    # Split owners_range into min/max
+    cleaned_df[["owners_min", "owners_max"]] = cleaned_df["owners_range"].apply(split_range)
+    cleaned_df = cleaned_df.drop(columns=["owners_range"])
+
     # Ensure output directory exists
-    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
 
-    # Export to Excel
-    cleaned_df.to_excel(output_file, index=False)
+    # Export to CSV
+    cleaned_df.to_csv(OUTPUT_FILE, index=False)
+    print(f"Cleaned data saved to: {OUTPUT_FILE}")
 
-    print(f"Cleaned data saved to: {output_file}")
 
 if __name__ == "__main__":
     main()
