@@ -3,9 +3,8 @@ from functools import reduce
 import glob
 import os
 
-input_folder = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\processed data"  # folder containing multiple CSVs
-output_file = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\processed data\combined_output.csv"
-des_path =r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\processed data\descriptions_clean.csv"
+input_folder = "data/clean data"  # folder containing multiple CSVs
+output_file = "data/clean data/combined_output.csv"
 # Get a list of all CSV files in the folder
 des= pd.read_csv(input_folder+"\descriptions_clean.csv")
 df=des.copy()
