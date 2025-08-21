@@ -1,4 +1,4 @@
-# data_preprocessing_genrescsv.py
+# genres.py
 # Merge all genres per app_id into a single canonical, deduplicated list.
 
 import re
