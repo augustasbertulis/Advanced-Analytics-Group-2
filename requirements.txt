@@ -1,4 +1,3 @@
-pandas
 pythong version: 3.11
 Packages:
 - numpy
