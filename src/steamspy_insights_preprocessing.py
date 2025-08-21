@@ -1,9 +1,20 @@
-import pandas as pd
+import pandas as pd, re
 import os
 
 # File paths
 input_file = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\raw data\steam-insights-main\steamspy_insights\steamspy_insights.csv"
 output_file = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\processed data\steamspy_insights_cleaned.xlsx"
+
+def split_range(s):
+    if pd.isna(s):
+        return None
+    m = re.match(r"\s*([0-9,._ ]+)\s*\.\.\s*([0-9,._ ]+)\s*$", str(s))
+    if not m: 
+        return pd.Series([pd.NA, pd.NA])
+    def norm(x):
+        x = re.sub(r"[^\d]", "", x)
+        return pd.to_numeric(x, errors="coerce").astype("Int64")
+    return pd.Series([norm(m.group(1)), norm(m.group(2))])
 
 def clean_steamspy_data(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -28,6 +39,8 @@ def clean_steamspy_data(df: pd.DataFrame) -> pd.DataFrame:
     # Drop rows where BOTH developer and publisher are missing
     df = df[~(df["developer"].isna() & df["publisher"].isna())]
 
+
+
     # Print summary
     print(f"Rows removed due to missing app_id: {missing_app_id_count}")
     print(f"Rows removed due to missing developer and publisher: {missing_dev_pub_count}")
@@ -44,7 +57,7 @@ def main():
 
     # Clean data
     cleaned_df = clean_steamspy_data(df)
-
+    cleaned_df[["owners_min","owners_max"]] = cleaned_df["owners_range"].apply(split_range)
     # Ensure output directory exists
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
