@@ -1,5 +1,15 @@
 # data_preprocessing_gamescsv.py
-# Fast, robust cleaner for heterogeneous Steam-like CSV rows.
+# Steam-like games.csv cleaner
+#
+# What this script does
+# - Reads a raw Steam-style CSV with inconsistent quoting and shifted columns.
+# - Recovers price (price_overview.final) + currency from a broken JSON-ish
+#   blob, or from plain columns when present; missing price -> 0.00.
+# - Derives is_free (price == 0.0) and drops currency for free titles.
+# - Cleans and canonicalizes the "languages" field (strips HTML/BBCode/notes,
+#   maps locale variants like “Anglais/Engels/Angielski” -> “English”).
+# - Normalizes release_date to ISO (YYYY-MM-DD) and app_id to integer.
+# ---------------------------------------------------------------------------
 
 import csv
 import html
