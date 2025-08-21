@@ -4,7 +4,7 @@ import os
 
 # File paths
 INPUT_FILE = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\raw data\steam-insights-main\steamspy_insights\steamspy_insights.csv"
-OUTPUT_FILE = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\processed data\steamspy_insights_cleaned.xlsx"
+OUTPUT_FILE = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\processed data\steamspy_insights_cleaned.csv"
 
 
 def split_range(s):
