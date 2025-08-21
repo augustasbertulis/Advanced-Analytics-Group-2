@@ -1,5 +1,5 @@
 # data_preprocessing_genrescsv.py
-# One-hot encode the TOP-10 genres for each app_id; fold the rest into a single "other_genres" column.
+# Merge all genres per app_id into a single canonical, deduplicated list.
 
 import re
 from pathlib import Path
@@ -87,52 +87,35 @@ def main():
                 rows.append((app, cg))
 
     if not rows:
-        pd.DataFrame(columns=["app_id"]).to_csv(output_file, index=False, encoding="utf-8")
+        pd.DataFrame(columns=["app_id", "genres"]).to_csv(output_file, index=False, encoding="utf-8")
         print("No valid genres found. Wrote empty file with header only.")
         return
 
     long = pd.DataFrame(rows, columns=["app_id", "genre_canon"])
 
-    # aggregate to unique set per app_id
-    per_app = (long.groupby("app_id")["genre_canon"]
-                    .apply(lambda s: sorted(set(s)))
-                    .reset_index())
-
-    # global frequencies (by app presence)
-    freq = (long.drop_duplicates(["app_id", "genre_canon"])
-                 .groupby("genre_canon")["app_id"].nunique()
-                 .sort_values(ascending=False))
-
-    top10 = list(freq.head(10).index)
-
-    # one-hot for top 10; keep a single text column for the rest
-    def one_hot_row(genres):
-        present = set(genres)
-        cols = {f"genre_{g}": int(g in present) for g in top10}
-        other = sorted(g for g in present if g not in top10)
-        cols["other_genres"] = ", ".join(other) if other else None
-        return pd.Series(cols)
-
-    wide = per_app.join(per_app["genre_canon"].apply(one_hot_row))
-    wide = wide.drop(columns=["genre_canon"], errors="ignore")
+    # dedupe per app_id, then merge into a single comma-separated string
+    merged = (
+        long.drop_duplicates(["app_id", "genre_canon"])
+            .groupby("app_id")["genre_canon"]
+            .apply(lambda s: ", ".join(sorted(s)))
+            .reset_index()
+            .rename(columns={"genre_canon": "genres"})
+    )
 
     # make app_id a proper nullable integer key
-    wide["app_id"] = pd.to_numeric(wide["app_id"], errors="coerce").astype("Int64")
-    bad_ids = int(wide["app_id"].isna().sum())
+    merged["app_id"] = pd.to_numeric(merged["app_id"], errors="coerce").astype("Int64")
+    bad_ids = int(merged["app_id"].isna().sum())
     if bad_ids:
         print(f"Warning: {bad_ids} app_id values could not be parsed to integers.")
 
     # save
-    wide.to_csv(output_file, index=False, encoding="utf-8")
+    merged.to_csv(output_file, index=False, encoding="utf-8")
 
     # summary
     print(f"Raw rows read: {total_rows:,}")
-    print(f"Unique apps with genres: {wide.shape[0]:,}")
-    print(f"Distinct canonical genres: {freq.shape[0]:,}")
-    print("Top 10 genres:")
-    for g, c in freq.head(10).items():
-        print(f"  {g:<15} {c:,} apps")
-    print(f"Saved one-hot file → {output_file}")
+    print(f"Unique apps with at least one genre: {len(merged):,}")
+    print(f"Distinct canonical genres overall: {long['genre_canon'].nunique():,}")
+    print(f"Saved merged genres → {output_file}")
 
 if __name__ == "__main__":
     main()
