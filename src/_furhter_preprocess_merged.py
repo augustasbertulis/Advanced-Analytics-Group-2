@@ -20,7 +20,7 @@ df = pd.read_csv(import_path, low_memory=False)
 # ---------------------------------------------------------------------
 # PRICE HANDLING
 # ---------------------------------------------------------------------
-df["price_in_eur"] = df["price"] * df["price_overview.currency_x"].map(fx).fillna(0)
+df["price_in_eur"] = (df["price"] * df["price_overview.currency_x"].map(fx)).fillna(0)
 
 # ---------------------------------------------------------------------
 # HELPERS
