@@ -89,6 +89,7 @@ def main():
     # Export to CSV
     cleaned_df.to_csv(OUTPUT_FILE, index=False)
     print(f"Cleaned data saved to: {OUTPUT_FILE}")
+    print(cleaned_df.shape)
 
 
 if __name__ == "__main__":

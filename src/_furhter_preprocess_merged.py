@@ -1,28 +1,30 @@
-"""
-Description:
-- drop playtime  --> values are missing (--> maybe fill up with data from 'how long to beat')
-- drop columns where there is no diverse data in howl set
-- calculate price_in_eur; drop price_overview.final, price_overview.currency, price, initial_price
-- combine languages_x and languages_y; genres_x and genres_y
-- one-hot encode top 10 genres, drop the rest
-- drop rows where both developer and publisher are missing
-- normalize publisher and developer names (Levenshtein-like clustering)
-"""
-
 import re
 import pandas as pd
 
-# I/O
+# ---------------------------------------------------------------------
+# CONFIG
+# ---------------------------------------------------------------------
 import_path  = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/combined.csv"
 output_path  = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/combined_clean.csv"
+
+fx = {
+    "EUR":1.0,"USD":0.85,"GBP":1.17,"MXN":0.05,"RUB":0.011,"IDR":0.000056,
+    "PLN":0.22,"BRL":0.17,"CNY":0.12,"AUD":0.55,"SGD":0.62,"ILS":0.23
+}
+
+# ---------------------------------------------------------------------
+# LOAD DATA
+# ---------------------------------------------------------------------
 df = pd.read_csv(import_path, low_memory=False)
 
-# --- FX map & EUR price ------------------------------------------------------
-fx = {"EUR":1.0,"USD":0.85,"GBP":1.17,"MXN":0.05,"RUB":0.011,"IDR":0.000056,
-      "PLN":0.22,"BRL":0.17,"CNY":0.12,"AUD":0.55,"SGD":0.62,"ILS":0.23}
-df["price_in_eur"] = df["price"] * df["price_overview.currency"].map(fx).fillna(0)
+# ---------------------------------------------------------------------
+# PRICE HANDLING
+# ---------------------------------------------------------------------
+df["price_in_eur"] = df["price"] * df["price_overview.currency_x"].map(fx).fillna(0)
 
-# --- small helpers -----------------------------------------------------------
+# ---------------------------------------------------------------------
+# HELPERS
+# ---------------------------------------------------------------------
 def split_list(s: str) -> list[str]:
     return [] if pd.isna(s) else [x.strip() for x in str(s).split(",") if x.strip()]
 
@@ -38,22 +40,24 @@ def safe_name(s: str) -> str:
     s = re.sub(r"[^a-z0-9_]", "_", s)
     return re.sub(r"_+", "_", s).strip("_")
 
-# --- Merge genres_x & genres_y ----------------------------------------------
-df["merged_genres"] = df.apply(lambda r: merge_unique(split_list(r.get("genres_x")),
-                                                      split_list(r.get("genres_y"))), axis=1)
+# ---------------------------------------------------------------------
+# GENRES (merge + one-hot top 10)
+# ---------------------------------------------------------------------
+df["merged_genres"] = df.apply(lambda r: merge_unique(
+    split_list(r.get("genres_x")), split_list(r.get("genres_y"))
+), axis=1)
 
-# frequency across apps (presence-based)
 all_genres = pd.Series([g for lst in df["merged_genres"] for g in lst])
 top10 = list(all_genres.value_counts().head(10).index)
 
-# one-hot with rank-based names
 for i, g in enumerate(top10, 1):
     df[f"genre{i}_{safe_name(g)}"] = df["merged_genres"].apply(lambda lst, gg=g: int(gg in lst))
 
-# drop raw genre columns and temp
 df.drop(columns=["genres_x","genres_y","merged_genres"], inplace=True, errors="ignore")
 
-# --- Merge languages_x & languages_y ----------------------------------------
+# ---------------------------------------------------------------------
+# LANGUAGES (merge)
+# ---------------------------------------------------------------------
 df["languages"] = df.apply(
     lambda r: ", ".join(merge_unique(split_list(r.get("languages_x")),
                                      split_list(r.get("languages_y")))) or None,
@@ -61,10 +65,9 @@ df["languages"] = df.apply(
 )
 df.drop(columns=["languages_x","languages_y"], inplace=True, errors="ignore")
 
-# --- Drop rows where both developer and publisher are missing ---------------
-df = df.dropna(subset=["developer", "publisher"], how="all")
-
-# --- Company name normalization ---------------------------------------------
+# ---------------------------------------------------------------------
+# COMPANY NAME NORMALIZATION
+# ---------------------------------------------------------------------
 _SUFFIX_STOPWORDS = {
     "inc","ltd","llc","co","corp","corporation","company","studios","studio",
     "games","game","interactive","entertainment","soft","software","plc","gmbh",
@@ -105,50 +108,63 @@ def _choose_representative(names: list[str]) -> str:
     return best[0]
 
 def normalize_company_column(df_: pd.DataFrame, col: str) -> pd.Series:
-    s = df_[col].astype("string")
-    missing_mask = s.isna() | s.str.strip().eq("")
-    keys = s.fillna("").map(_canon_key)
+    s = df_[col].astype("string").fillna("Unknown")
+    missing_mask = s.str.strip().eq("")
+    keys = s.map(_canon_key)
 
     groups = {}
-    for orig, key in zip(s.fillna(""), keys):
+    for orig, key in zip(s, keys):
         if key:
             groups.setdefault(key, []).append(orig)
     rep_map = {k: _choose_representative(v) for k, v in groups.items()}
 
-    def _fallback_pretty(orig) -> str | None:
-        if pd.isna(orig): return None
+    def _fallback_pretty(orig) -> str:
         keep_upper = {"VR","AR","III","II","IV","V","VI"}
         words = str(orig).strip()
-        if not words: return None
+        if not words: return "Unknown"
         return " ".join(w if w.upper() in keep_upper else w.title() for w in words.split())
 
     out = []
     for orig, key, is_missing in zip(s, keys, missing_mask):
         if is_missing:
-            out.append(pd.NA)
+            out.append("Unknown")
         elif key:
             out.append(rep_map.get(key) or _fallback_pretty(orig))
         else:
             out.append(_fallback_pretty(orig))
     return pd.Series(out, index=df_.index, dtype="string")
 
-# apply normalization
+# Apply normalization (no row drops)
 df["publisher"] = normalize_company_column(df, "publisher")
 df["developer"] = normalize_company_column(df, "developer")
 
-print("Unique publishers (cleaned):", df["publisher"].nunique(dropna=True))
-print("Unique developers (cleaned):", df["developer"].nunique(dropna=True))
-
-# --- Drop unneeded columns ---------------------------------------------------
+# ---------------------------------------------------------------------
+# DROP UNUSED COLUMNS
+# ---------------------------------------------------------------------
 cols_to_drop = [
     "playtime_average_forever","playtime_average_2weeks",
     "playtime_median_forever","playtime_median_2weeks",
     "summary","extensive","about",
-    "price_overview.final","price_overview.currency","price","initial_price",
-    "header_image","steamspy_scorer_rank","exchange_rate"  # if present
+    "price_overview.final_x", "price_overview.final_y","price_overview.currency_x", "price_overview.currency_y","price","initial_price",
+    "header_image","steamspy_scorer_rank","exchange_rate", "name_y", "release_date_y", "is_free_y", "type_y"
 ]
 df.drop(columns=cols_to_drop, inplace=True, errors="ignore")
 
-# --- Save --------------------------------------------------------------------
+# ---------------------------------------------------------------------
+# FEATURE ENGINEERING
+# ---------------------------------------------------------------------
+"""
+Active Engagement Index = (concurrent_users_yesterday / owners_max) --> measures how many owners are still active.
+Positivity Ratio = positive / total --> proxy for community reception
+Revenue Proxy = owners_avg * price_in_eur
+"""
+df['owners_avg'] = (df['owners_min'] + df['owners_max']) / 2
+df['positive_score'] = df['positive'] / df['total']
+df['revenue_proxy'] = df['owners_avg'] * df['price_in_eur']
+df['active_engagement_score'] = df['concurrent_users_yesterday'] / df['owners_avg']
+
+# ---------------------------------------------------------------------
+# SAVE
+# ---------------------------------------------------------------------
 df.to_csv(output_path, index=False, encoding="utf-8-sig")
 print(f"[done] saved cleaned dataset {df.shape} → {output_path}")
