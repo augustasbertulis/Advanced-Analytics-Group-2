@@ -2,9 +2,13 @@ import pandas as pd
 import re
 import os
 
+#Path Fabrizio:
+#INPUT_FILE = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/steamspy_insights.csv"
+#OUTPUT_FILE = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/steamspy_insights.csv"
+
 # File paths
-INPUT_FILE = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\raw data\steam-insights-main\steamspy_insights\steamspy_insights.csv"
-OUTPUT_FILE = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\processed data\steamspy_insights_cleaned.csv"
+INPUT_FILE = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/steamspy_insights.csv"
+OUTPUT_FILE = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/steamspy_insights.csv"
 
 
 def split_range(s):

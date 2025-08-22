@@ -3,8 +3,11 @@ import pandas as pd
 from pathlib import Path
 import csv
 
-INPUT = "raw data/steam-insights-main/descriptions.csv"
-OUTPUT_CSV = "clean data/descriptions_clean.csv"
+
+INPUT = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/descriptions.csv"
+OUTPUT_CSV = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/descriptions_clean.csv"
+#INPUT = "raw data/steam-insights-main/descriptions.csv"
+#OUTPUT_CSV = "clean data/descriptions_clean.csv"
 
 def process_data(df):
     # Typisieren
