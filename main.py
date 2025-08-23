@@ -17,6 +17,7 @@ from src import steamspy_insights
 from src import tags
 from src import csv_merge
 from src import further_preprocess
+import model
 
 if __name__ == "__main__":
     categories.main()
@@ -29,3 +30,4 @@ if __name__ == "__main__":
     tags.main()
     csv_merge.main()
     further_preprocess.main()
+    model.main()
