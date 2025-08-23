@@ -7,6 +7,7 @@ from datetime import datetime
 
 # --------------------------- Config ---------------------------
 IMPORT_PATH = "data/clean data/combined_clean.csv"
+out = "data/clean data/"
 
 # Per-model config
 # - features: columns used for k-means (after aggregation)
@@ -240,8 +241,7 @@ ranked = merged.sort_values(sort_cols, ascending=False)
 # ------------------------ Output ------------------------
 pd.set_option("display.max_rows", 50)
 final_pick = ranked.head(20)
-final_pick.to_excel("data/clean data/publisher_ranked_consensus.xlsx", index=False)
-# If you want CSV outputs
-# ranked.to_csv("out/publisher_ranked_consensus.csv", index=False)
-# for m, (summary) in per_model_summaries.items():
-#     summary.to_csv(f"out/{m}_cluster_summary.csv")
+final_pick.to_excel(out+"publisher_ranked_consensus.xlsx", index=False)
+#If you want CSV outputs
+for m, (summary) in per_model_summaries.items():
+    summary.to_csv(out+f"/{m}_cluster_summary.csv")
