@@ -4,12 +4,13 @@ import os
 
 #Path Fabrizio:
 #INPUT_FILE = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/steamspy_insights.csv"
-#OUTPUT_FILE = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/steamspy_insights.csv"
+#OUTPUT_FILE = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/steamspy_insights_clean.csv"
 
 # File paths
-INPUT_FILE = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/steamspy_insights.csv"
-OUTPUT_FILE = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/steamspy_insights.csv"
-
+#INPUT_FILE = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/steamspy_insights.csv"
+#OUTPUT_FILE = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/steamspy_insights_clean.csv"
+INPUT_FILE = "data/raw data/steam-insights-main/steamspy_insights.csv"
+OUTPUT_FILE="data/clean data/steamspy_insights_clean.csv"
 
 def split_range(s):
     """Splits a string like '1,000 .. 5,000' into [1000, 5000]."""

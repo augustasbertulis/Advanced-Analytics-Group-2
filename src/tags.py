@@ -3,10 +3,8 @@ import pandas as pd
 #Path Fabrizio:
 #INPUT = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/tags.csv"
 #OUTPUT_CSV = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/tags_clean.csv"
-
-
-INPUT = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/tags.csv"
-OUTPUT_CSV = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/tags_clean.csv"
+INPUT = "data/steam-insights-main/raw data/tags.csv"
+OUTPUT_CSV = "data/clean data/tags_clean.csv"
 
 def process_data(df):
     # Tags pro app_id zählen

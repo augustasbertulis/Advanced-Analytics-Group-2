@@ -9,9 +9,10 @@ import re
 import pandas as pd
 from pathlib import Path
 
-INPUT = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/reviews.csv"
-OUTPUT = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/reviews_clean.csv"
-
+#INPUT = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/reviews.csv"
+#OUTPUT = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/reviews_clean.csv"
+INPUT = "data/steam-insights-main/raw data/reviews.csv"
+OUTPUT = "data/clean data/reviews_clean.csv"
 ID_OK = re.compile(r"^\d+$")
 
 # values that should always become null

@@ -6,10 +6,11 @@ from pathlib import Path
 import pandas as pd
 
 #-------------------- File paths (adjust if needed) --------------------
-
+input_file = "data/raw data/steam-insights-main/genres.csv"
+output_file = "data/clean data/genres_clean.csv"
 #Path Fabrizio:
-input_file = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/genres.csv"
-output_file = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/genres_clean.csv"
+#input_file = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/genres.csv"
+#output_file = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/genres_clean.csv"
 
 #input_file  = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\raw data\steam-insights-main\genres\genres.csv"
 #output_file = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\processed data\genres_clean.csv"

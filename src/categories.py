@@ -3,8 +3,8 @@ import pandas as pd
 from pathlib import Path
 import csv
 
-INPUT = "raw data/steam-insights-main/categories.csv"
-OUTPUT_CSV = "clean data/categories_clean.csv"
+INPUT = "data/raw data/steam-insights-main/categories.csv"
+OUTPUT_CSV = "data/clean data/categories_clean.csv"
 
 CATEGORY_TRANSLATIONS = {
     "Family Sharing": ["Family Sharing", "Familienbibliothek", "Семейный доступ", "Partage familial", "Compartilhamento em família"],

@@ -19,9 +19,10 @@ from pathlib import Path
 import pandas as pd
 
 #-------------------- File paths (adjust if needed) --------------------
-
-input_file = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/games.csv"
-output_file = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/games_clean.csv"
+input_file = "data/raw data/steam-insights-main/games.csv"
+output_file = "data/clean data/games_clean.csv"
+#input_file = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/games.csv"
+#output_file = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/games_clean.csv"
 #input_file = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\raw data\steam-insights-main\games\games.csv"
 #output_file = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\processed data\games_cleaned.csv"
 Path(output_file).parent.mkdir(parents=True, exist_ok=True)

@@ -4,9 +4,10 @@ import pandas as pd
 # ---------------------------------------------------------------------
 # CONFIG
 # ---------------------------------------------------------------------
-import_path  = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/combined.csv"
-output_path  = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/combined_clean.csv"
-
+#import_path  = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/combined.csv"
+#output_path  = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/combined_clean.csv"
+import_path = "data/clean data/combined.csv"
+output_path = "data/clean data/combined_clean.csv"
 fx = {
     "EUR":1.0,"USD":0.85,"GBP":1.17,"MXN":0.05,"RUB":0.011,"IDR":0.000056,
     "PLN":0.22,"BRL":0.17,"CNY":0.12,"AUD":0.55,"SGD":0.62,"ILS":0.23
@@ -20,7 +21,7 @@ df = pd.read_csv(import_path, low_memory=False)
 # ---------------------------------------------------------------------
 # PRICE HANDLING
 # ---------------------------------------------------------------------
-df["price_in_eur"] = df["price"] * df["price_overview.currency_x"].map(fx).fillna(0)
+df["price_in_eur"] = df["price"] * df["price_overview.currency"].map(fx).fillna(0)
 
 # ---------------------------------------------------------------------
 # HELPERS
@@ -44,7 +45,7 @@ def safe_name(s: str) -> str:
 # GENRES (merge + one-hot top 10)
 # ---------------------------------------------------------------------
 df["merged_genres"] = df.apply(lambda r: merge_unique(
-    split_list(r.get("genres_x")), split_list(r.get("genres_y"))
+    split_list(r.get("genres")), split_list(r.get("genres"))
 ), axis=1)
 
 all_genres = pd.Series([g for lst in df["merged_genres"] for g in lst])
@@ -53,13 +54,13 @@ top10 = list(all_genres.value_counts().head(10).index)
 for i, g in enumerate(top10, 1):
     df[f"genre{i}_{safe_name(g)}"] = df["merged_genres"].apply(lambda lst, gg=g: int(gg in lst))
 
-df.drop(columns=["genres_x","genres_y","merged_genres"], inplace=True, errors="ignore")
+df.drop(columns=["genres","merged_genres"], inplace=True, errors="ignore")
 
 # ---------------------------------------------------------------------
 # LANGUAGES (merge)
 # ---------------------------------------------------------------------
 df["languages"] = df.apply(
-    lambda r: ", ".join(merge_unique(split_list(r.get("languages_x")),
+    lambda r: ", ".join(merge_unique(split_list(r.get("languages")),
                                      split_list(r.get("languages_y")))) or None,
     axis=1
 )

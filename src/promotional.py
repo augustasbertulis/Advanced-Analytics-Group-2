@@ -1,9 +1,10 @@
 import pandas as pd
 
 #Path Fabrizio:
-INPUT = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/promotional.csv"
-OUTPUT_CSV = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/promotional_clean.csv"
-
+#INPUT = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/promotional.csv"
+#OUTPUT_CSV = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/promotional_clean.csv"
+INPUT = "data/raw data/steam-insights-main/promotional.csv"
+OUTPUT_CSV = "data/clean data/promotional_clean.csv"
 # CSV-Datei einlesen
 df = pd.read_csv(INPUT,
                  engine="python", sep=",", quotechar='"',
