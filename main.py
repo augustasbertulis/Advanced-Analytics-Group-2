@@ -15,6 +15,8 @@ from src import promotional
 from src import reviews
 from src import steamspy_insights
 from src import tags
+from src import csv_merge
+from src import further_preprocess
 
 if __name__ == "__main__":
     categories.main()
@@ -25,3 +27,5 @@ if __name__ == "__main__":
     reviews.main()
     steamspy_insights.main()
     tags.main()
+    csv_merge.main()
+    further_preprocess.main()
