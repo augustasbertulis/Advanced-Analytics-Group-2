@@ -10,6 +10,7 @@ from paths import PROCESSED_DATA_DIR
 IMPORT_PATH = PROCESSED_DATA_DIR / "combined_clean.csv"
 out = PROCESSED_DATA_DIR
 
+
 # Per-model config
 # - features: columns used for k-means (after aggregation)
 # - groupby: "publisher" (kept for flexibility)
@@ -124,125 +125,137 @@ def best_clusters_by_score(df_grouped: pd.DataFrame, cluster_col: str, features:
     summary["score"] = minmax_weighted_score(summary[features], weights)
     top_clusters = summary["score"].sort_values(ascending=False).head(top_n).index
     return top_clusters, summary
-
+def run_all_kmeans(import_path: str = IMPORT_PATH,
+                          model_configs: dict = MODEL_CONFIGS,
+                          vote_weights: dict = MODEL_VOTE_WEIGHTS,
+                          excel_out: str = "data/clean data/publisher_ranked_consensus.xlsx"):
 # ------------------------ Load & feature engineering ------------------------
-df = pd.read_csv(IMPORT_PATH, low_memory=False)
+    df = pd.read_csv(IMPORT_PATH, low_memory=False)
 
-# owners_avg early (used by multiple models)
-if "owners_avg" not in df.columns:
-    df["owners_avg"] = (df["owners_min"] + df["owners_max"]) / 2
+    # owners_avg early (used by multiple models)
+    if "owners_avg" not in df.columns:
+        df["owners_avg"] = (df["owners_min"] + df["owners_max"]) / 2
 
-# release_date → growth-related features
-if "release_date" in df.columns:
-    df["release_date"] = pd.to_datetime(df["release_date"], errors="coerce")
-else:
-    df["release_date"] = pd.NaT
-
-today = pd.Timestamp(datetime.today().date())
-df["days_since_release"] = (today - df["release_date"]).dt.days
-df["days_since_release"] = df["days_since_release"].replace(0, 1)  # avoid div by zero
-
-# growth_potential: (owners_max - owners_min) / days_since_release
-if {"owners_max", "owners_min"}.issubset(df.columns):
-    df["growth_potential"] = (df["owners_max"] - df["owners_min"]) / df["days_since_release"]
-else:
-    df["growth_potential"] = np.nan
-
-# Null safety
-df = df.fillna({
-    "revenue_proxy": 0,
-    "price_in_eur": 0,
-    "owners_avg": 0,
-    "positive_score": 0,
-    "positive": 0,
-    "total": 0,
-    "active_engagement_score": 0,
-    "concurrent_users_yesterday": 0,
-    "growth_potential": 0,
-})
-
-# Build source_cols for model4 after feature engineering
-MODEL_CONFIGS["model4"]["source_cols"] = ["publisher", "growth_potential", "owners_avg", "concurrent_users_yesterday"]
-
-# ------------------------ Run models ------------------------
-per_model_flags = {}           # publisher → is_best flag per model
-per_model_summaries = {}       # cluster summaries incl. score per model
-per_model_cluster_cols = {}    # cluster column names for each model
-
-for model_key, cfg in MODEL_CONFIGS.items():
-    group_col = cfg["groupby"]
-    feats = cfg["features"]
-    k = cfg["k"]
-    weights = cfg["weights"]
-    top_n = cfg.get("top_n_clusters", 1)
-
-    # subset + fillna per-model if requested
-    if cfg.get("source_cols"):
-        sub = df[cfg["source_cols"]].copy()
+    # release_date → growth-related features
+    if "release_date" in df.columns:
+        df["release_date"] = pd.to_datetime(df["release_date"], errors="coerce")
     else:
-        # fallback: keep group_col + features
-        cols = [group_col] + [c for c in feats if c in df.columns]
-        sub = df[cols].copy()
+        df["release_date"] = pd.NaT
 
-    # model-specific fillna if provided
-    if cfg.get("fillna"):
-        sub = sub.fillna(cfg["fillna"])
+    today = pd.Timestamp(datetime.today().date())
+    df["days_since_release"] = (today - df["release_date"]).dt.days
+    df["days_since_release"] = df["days_since_release"].replace(0, 1)  # avoid div by zero
 
-    # aggregate per publisher (or group_col)
-    agg = cfg.get("agg")
-    if agg is None:
-        agg = {f: "mean" for f in feats}
-    grouped = sub.groupby(group_col, as_index=False).agg(agg)
-
-    # run k-means
-    cluster_col = f"cluster_{model_key}"
-    grouped = run_kmeans_model(grouped, feats, k, cluster_col)
-
-    # score clusters & mark best
-    top_clusters, summary = best_clusters_by_score(grouped, cluster_col, feats, weights, top_n=top_n)
-    grouped[f"is_best_{model_key}"] = grouped[cluster_col].isin(top_clusters)
-
-    # stash results
-    per_model_flags[model_key] = grouped[[group_col, f"is_best_{model_key}"]]
-    per_model_summaries[model_key] = summary
-    per_model_cluster_cols[model_key] = (grouped[[group_col, cluster_col]], feats)
-
-# ------------------------ Merge & voting ------------------------
-# Outer-join best flags across all models
-merged = None
-for model_key, flags in per_model_flags.items():
-    if merged is None:
-        merged = flags.copy()
+    # growth_potential: (owners_max - owners_min) / days_since_release
+    if {"owners_max", "owners_min"}.issubset(df.columns):
+        df["growth_potential"] = (df["owners_max"] - df["owners_min"]) / df["days_since_release"]
     else:
-        merged = merged.merge(flags, on="publisher", how="outer")
+        df["growth_potential"] = np.nan
 
-# Coerce boolean (fills missing with False)
-for model_key in MODEL_CONFIGS.keys():
-    col = f"is_best_{model_key}"
-    if col in merged.columns:
-        merged[col] = merged[col].fillna(False).astype(bool)
+    # Null safety
+    df = df.fillna({
+        "revenue_proxy": 0,
+        "price_in_eur": 0,
+        "owners_avg": 0,
+        "positive_score": 0,
+        "positive": 0,
+        "total": 0,
+        "active_engagement_score": 0,
+        "concurrent_users_yesterday": 0,
+        "growth_potential": 0,
+    })
 
-# Unweighted votes
-best_cols = [f"is_best_{m}" for m in MODEL_CONFIGS.keys()]
-merged["votes"] = merged[best_cols].sum(axis=1)
+    # Build source_cols for model4 after feature engineering
+    MODEL_CONFIGS["model4"]["source_cols"] = ["publisher", "growth_potential", "owners_avg", "concurrent_users_yesterday"]
 
-# Optional weighted votes
-if MODEL_VOTE_WEIGHTS:
-    merged["weighted_votes"] = sum(
-        merged[f"is_best_{m}"].astype(float) * MODEL_VOTE_WEIGHTS.get(m, 1.0)
-        for m in MODEL_CONFIGS.keys()
-    )
+    # ------------------------ Run models ------------------------
+    per_model_flags = {}           # publisher → is_best flag per model
+    per_model_summaries = {}       # cluster summaries incl. score per model
+    per_model_cluster_cols = {}    # cluster column names for each model
 
-# Sort by consensus
-sort_cols = ["votes"]
-if "weighted_votes" in merged.columns:
-    sort_cols = ["weighted_votes", "votes"]
-ranked = merged.sort_values(sort_cols, ascending=False)
+    for model_key, cfg in MODEL_CONFIGS.items():
+        group_col = cfg["groupby"]
+        feats = cfg["features"]
+        k = cfg["k"]
+        weights = cfg["weights"]
+        top_n = cfg.get("top_n_clusters", 1)
 
-# ------------------------ Output ------------------------
-pd.set_option("display.max_rows", 50)
-final_pick = ranked.head(20)
-final_pick.to_excel(out+"publisher_ranked_consensus.xlsx", index=False)
-#If you want CSV outputs
-for m, (summary) in per_model_summaries.items():
-    summary.to_csv(out+f"/{m}_cluster_summary.csv")
+        # subset + fillna per-model if requested
+        if cfg.get("source_cols"):
+            sub = df[cfg["source_cols"]].copy()
+        else:
+            # fallback: keep group_col + features
+            cols = [group_col] + [c for c in feats if c in df.columns]
+            sub = df[cols].copy()
+
+        # model-specific fillna if provided
+        if cfg.get("fillna"):
+            sub = sub.fillna(cfg["fillna"])
+
+        # aggregate per publisher (or group_col)
+        agg = cfg.get("agg")
+        if agg is None:
+            agg = {f: "mean" for f in feats}
+        grouped = sub.groupby(group_col, as_index=False).agg(agg)
+
+        # run k-means
+        cluster_col = f"cluster_{model_key}"
+        grouped = run_kmeans_model(grouped, feats, k, cluster_col)
+
+        # score clusters & mark best
+        top_clusters, summary = best_clusters_by_score(grouped, cluster_col, feats, weights, top_n=top_n)
+        grouped[f"is_best_{model_key}"] = grouped[cluster_col].isin(top_clusters)
+
+        # stash results
+        per_model_flags[model_key] = grouped[[group_col, f"is_best_{model_key}"]]
+        per_model_summaries[model_key] = summary
+        per_model_cluster_cols[model_key] = (grouped[[group_col, cluster_col]], feats)
+
+    # ------------------------ Merge & voting ------------------------
+    # Outer-join best flags across all models
+    merged = None
+    for model_key, flags in per_model_flags.items():
+        if merged is None:
+            merged = flags.copy()
+        else:
+            merged = merged.merge(flags, on="publisher", how="outer")
+
+    # Coerce boolean (fills missing with False)
+    for model_key in MODEL_CONFIGS.keys():
+        col = f"is_best_{model_key}"
+        if col in merged.columns:
+            merged[col] = merged[col].fillna(False).astype(bool)
+
+    # Unweighted votes
+    best_cols = [f"is_best_{m}" for m in MODEL_CONFIGS.keys()]
+    merged["votes"] = merged[best_cols].sum(axis=1)
+
+    # Optional weighted votes
+    if MODEL_VOTE_WEIGHTS:
+        merged["weighted_votes"] = sum(
+            merged[f"is_best_{m}"].astype(float) * MODEL_VOTE_WEIGHTS.get(m, 1.0)
+            for m in MODEL_CONFIGS.keys()
+        )
+
+    # Sort by consensus
+    sort_cols = ["votes"]
+    if "weighted_votes" in merged.columns:
+        sort_cols = ["weighted_votes", "votes"]
+    ranked = merged.sort_values(sort_cols, ascending=False)
+
+    # ------------------------ Output ------------------------
+    pd.set_option("display.max_rows", 50)
+    final_pick = ranked.head(20)
+    final_pick.to_excel("data/clean data/publisher_ranked_consensus.xlsx", index=False)
+
+    # If you want CSV outputs
+    ranked.to_csv("out/publisher_ranked_consensus.csv", index=False)
+    for m, (summary) in per_model_summaries.items():
+        summary.to_csv(f"out/{m}_cluster_summary.csv")
+
+    return ranked, per_model_summaries
+def main():
+    run_all_kmeans()
+if __name__ == "__main__":
+    main()
+
