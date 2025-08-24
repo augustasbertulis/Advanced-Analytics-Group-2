@@ -7,6 +7,7 @@ from datetime import datetime
 
 # --------------------------- Config ---------------------------
 IMPORT_PATH = "data/clean data/combined_clean.csv"
+out = "data/clean data/"
 
 # Per-model config
 # - features: columns used for k-means (after aggregation)
@@ -253,3 +254,4 @@ if __name__ == "__main__":
 # ranked.to_csv("out/publisher_ranked_consensus.csv", index=False)
 # for m, (summary) in per_model_summaries.items():
 #     summary.to_csv(f"out/{m}_cluster_summary.csv")
+
