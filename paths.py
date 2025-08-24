@@ -10,6 +10,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 # Subfolders
 RAW_DATA_DIR = DATA_DIR / "raw data"
 PROCESSED_DATA_DIR = DATA_DIR / "processed data"
+MODEL_DATA_DIR = DATA_DIR / "model data"
 
 # Make sure the folders exist (optional, but nice for avoiding errors)
 RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)

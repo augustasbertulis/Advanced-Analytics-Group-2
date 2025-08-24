@@ -4,11 +4,11 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.cluster import KMeans
 from datetime import datetime
-from paths import PROCESSED_DATA_DIR
+from paths import PROCESSED_DATA_DIR, MODEL_DATA_DIR
 
 # Example: saving processed output
 IMPORT_PATH = PROCESSED_DATA_DIR / "combined_clean.csv"
-out = PROCESSED_DATA_DIR
+out = MODEL_DATA_DIR
 
 
 # Per-model config
@@ -129,7 +129,8 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
                           model_configs: dict = MODEL_CONFIGS,
                           vote_weights: dict = MODEL_VOTE_WEIGHTS,
                           excel_out: str = "data/clean data/publisher_ranked_consensus.xlsx"):
-# ------------------------ Load & feature engineering ------------------------
+
+    # ------------------------ Load & feature engineering ------------------------
     df = pd.read_csv(IMPORT_PATH, low_memory=False)
 
     # owners_avg early (used by multiple models)
@@ -152,8 +153,8 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
     else:
         df["growth_potential"] = np.nan
 
-    # Null safety
-    df = df.fillna({
+    # Define default values for all expected columns
+    default_values = {
         "revenue_proxy": 0,
         "price_in_eur": 0,
         "owners_avg": 0,
@@ -163,7 +164,15 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
         "active_engagement_score": 0,
         "concurrent_users_yesterday": 0,
         "growth_potential": 0,
-    })
+    }
+
+    # Ensure all expected columns exist
+    for col, default in default_values.items():
+        if col not in df.columns:
+            df[col] = default
+
+    # Now safely fill NaNs for existing columns
+    df = df.fillna(default_values)
 
     # Build source_cols for model4 after feature engineering
     MODEL_CONFIGS["model4"]["source_cols"] = ["publisher", "growth_potential", "owners_avg", "concurrent_users_yesterday"]
@@ -246,12 +255,12 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
     # ------------------------ Output ------------------------
     pd.set_option("display.max_rows", 50)
     final_pick = ranked.head(20)
-    final_pick.to_excel("data/clean data/publisher_ranked_consensus.xlsx", index=False)
+    final_pick.to_excel(out / "publisher_ranked_consensus.xlsx", index=False)
 
     # If you want CSV outputs
-    ranked.to_csv("out/publisher_ranked_consensus.csv", index=False)
+    ranked.to_csv(out / "publisher_ranked_consensus.csv", index=False)
     for m, (summary) in per_model_summaries.items():
-        summary.to_csv(f"out/{m}_cluster_summary.csv")
+        summary.to_csv(out / f"{m}_cluster_summary.csv")
 
     return ranked, per_model_summaries
 def main():
