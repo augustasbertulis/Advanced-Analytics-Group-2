@@ -10,13 +10,7 @@ os.makedirs(output_dir, exist_ok=True)
 # Load only relevant columns
 df = pd.read_csv(data_path, usecols=["app_id", "developer", "publisher"])
 
-# # Handle missing & split multiple entries
-# df["developer"] = df["developer"].fillna("").str.split(",|;")
-# df["publisher"] = df["publisher"].fillna("").str.split(",|;")
-# df = df.explode("developer").explode("publisher")
-# df["developer"] = df["developer"].str.strip()
-# df["publisher"] = df["publisher"].str.strip()
-# df = df[(df["developer"] != "") & (df["publisher"] != "")]
+# git 
 
 # --- Step 2: Build KPIs ---
 # Publisher KPIs
