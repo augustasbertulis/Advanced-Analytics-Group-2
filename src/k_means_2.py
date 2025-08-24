@@ -4,10 +4,11 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.cluster import KMeans
 from datetime import datetime
+from paths import PROCESSED_DATA_DIR
 
-# --------------------------- Config ---------------------------
-IMPORT_PATH = "data/clean data/combined_clean.csv"
-out = "data/clean data/"
+# Example: saving processed output
+IMPORT_PATH = PROCESSED_DATA_DIR / "combined_clean.csv"
+out = PROCESSED_DATA_DIR
 
 # Per-model config
 # - features: columns used for k-means (after aggregation)
