@@ -65,7 +65,7 @@ MODEL_CONFIGS = {
             "owners_avg": "mean",
             "concurrent_users_yesterday": "mean",
         },
-        "source_cols": None,  # constructed after feature engineering
+        "source_cols": None,
     },
 }
 
