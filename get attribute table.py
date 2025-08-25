@@ -1,60 +1,91 @@
+# publisher_summary.py
 import pandas as pd
-from datetime import datetime
 from paths import PROCESSED_DATA_DIR
 
-# Load files
-publishers = pd.read_csv(PROCESSED_DATA_DIR / "publisher_ranked_consensus.csv")
-games = pd.read_csv(PROCESSED_DATA_DIR / "combined_clean.csv", low_memory=False)
+# Input paths
+CONS_PATH = PROCESSED_DATA_DIR / "publisher_ranked_consensus.csv"
+GAMES_PATH = PROCESSED_DATA_DIR / "combined_clean.csv"
+OUT_PATH = PROCESSED_DATA_DIR / "attributes.csv"
 
-# Take only the first 20 publishers and assign IDs
-publishers_20 = publishers.head(20).copy()
-publishers_20["publisher_id"] = range(1, len(publishers_20) + 1)
+# Load datasets
+consensus = pd.read_csv(CONS_PATH, low_memory=False)
+games = pd.read_csv(GAMES_PATH, low_memory=False)
 
-# --- Feature Engineering (for KPIs like growth_potential) ---
-# owners_avg if missing
+# --- Add publisher_id if missing ---
+if "publisher_id" not in consensus.columns:
+    consensus = consensus.reset_index().rename(columns={"index": "publisher_id"})
+    consensus["publisher_id"] = consensus.index + 1
+
+# Clean publisher names
+consensus["publisher"] = consensus["publisher"].astype(str).str.strip()
+games["publisher"] = games["publisher"].astype(str).str.strip()
+
+# --- Restrict to first 20 publishers ---
+consensus = consensus.head(20)
+
+# --- Feature engineering for games ---
 if "owners_avg" not in games.columns:
     games["owners_avg"] = (games["owners_min"] + games["owners_max"]) / 2
 
-# release_date → days_since_release
 if "release_date" in games.columns:
     games["release_date"] = pd.to_datetime(games["release_date"], errors="coerce")
+    today = pd.Timestamp("2025-08-25")
+    games["days_since_release"] = (today - games["release_date"]).dt.days.replace(0, 1)
 else:
-    games["release_date"] = pd.NaT
+    games["days_since_release"] = 1
 
-today = pd.Timestamp(datetime.today().date())
-games["days_since_release"] = (today - games["release_date"]).dt.days
-games["days_since_release"] = games["days_since_release"].replace(0, 1)
+if {"owners_max", "owners_min"}.issubset(games.columns):
+    games["growth_potential"] = (games["owners_max"] - games["owners_min"]) / games["days_since_release"]
+else:
+    games["growth_potential"] = 0
 
-# growth_potential
-games["growth_potential"] = (games["owners_max"] - games["owners_min"]) / games["days_since_release"]
+# --- Merge ---
+merge_cols = ["publisher_id", "publisher"]
+if {"num_developers", "num_languages"}.issubset(consensus.columns):
+    merge_cols += ["num_developers", "num_languages"]
 
-# genres combined
-games["genres_combined"] = games[["genres_x", "genres_y"]].fillna("").agg("; ".join, axis=1).str.strip("; ")
+df = games.merge(consensus[merge_cols], on="publisher", how="inner")
 
-# --- Merge games with publishers ---
-merged = pd.merge(
-    games,
-    publishers_20[["publisher", "publisher_id"]],
-    on="publisher",
-    how="inner"
+# --- Handle genres ---
+if {"genres_x", "genres_y"}.issubset(df.columns):
+    df["genres_combined"] = df[["genres_x", "genres_y"]].fillna("").agg(", ".join, axis=1)
+elif "genres" in df.columns:
+    df["genres_combined"] = df["genres"].fillna("")
+else:
+    df["genres_combined"] = ""
+
+df["genres_combined"] = (
+    df["genres_combined"]
+    .str.replace(r",\s+", ", ", regex=True)
+    .str.strip(", ")
 )
 
-# Sort
-merged_sorted = merged.sort_values(by=["publisher_id", "publisher"])
+# --- Drop per-game fields ---
+df = df.drop(columns=["app_id", "name", "release_date", "genres_x", "genres_y", "genres"], errors="ignore")
 
-# --- Final columns in requested order ---
-keep_cols = [
-    "publisher_id", "publisher",
-    "app_id", "name", "release_date", "recommendations", "genres_combined", "price_in_eur",
-    "owners_avg", "revenue_proxy", "positive", "total", "positive_score",
-    "concurrent_users_yesterday", "active_engagement_score", "growth_potential"
+# --- KPI columns ---
+kpi_cols = [
+    "recommendations", "price_in_eur", "owners_avg", "revenue_proxy",
+    "positive", "total", "positive_score", "concurrent_users_yesterday",
+    "active_engagement_score", "growth_potential", "num_developers", "num_languages"
 ]
 
-# Keep only available columns
-final_table = merged_sorted[[c for c in keep_cols if c in merged_sorted.columns]]
+# --- Convert to numeric & fill NaN with 0 ---
+for col in kpi_cols:
+    if col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
-# Save output
-out_path = PROCESSED_DATA_DIR / "attributes.csv"
-final_table.to_csv(out_path, index=False)
+# --- Aggregation dictionary ---
+agg_dict = {col: "mean" for col in kpi_cols if col in df.columns}
+agg_dict["genres_combined"] = lambda x: ", ".join(sorted(set(", ".join(x).split(", "))))
 
-print("✅ Attribute table saved to:", out_path)
+# --- Group by publisher_id + publisher ---
+publisher_summary = df.groupby(["publisher_id", "publisher"], as_index=False).agg(agg_dict)
+
+# Round floats
+publisher_summary = publisher_summary.round(2)
+
+# Save
+publisher_summary.to_csv(OUT_PATH, index=False)
+
+print("Publisher summary saved to:", OUT_PATH)
