@@ -6,8 +6,8 @@ from sklearn.cluster import KMeans
 from datetime import datetime
 
 # --------------------------- Config ---------------------------
-IMPORT_PATH = "data/clean data/combined_clean.csv"
-out = "data/clean data/"
+IMPORT_PATH = r"C:\Users\test_\Documents\GitHub\Advanced-Analytics-Group-2\data\processed data\combined_clean.csv"
+out = r"C:\Users\test_\Documents\GitHub\Advanced-Analytics-Group-2\data"
 
 # Per-model config
 # - features: columns used for k-means (after aggregation)
@@ -24,7 +24,7 @@ MODEL_CONFIGS = {
         "weights": {"revenue_proxy": 0.5, "owners_avg": 0.4, "price_in_eur": -0.1},
         "top_n_clusters": 1,
         "agg": {"revenue_proxy": "mean", "price_in_eur": "mean", "owners_avg": "mean"},
-        "source_cols": ["app_id", "name", "publisher", "revenue_proxy", "price_in_eur", "owners_avg"],
+        "source_cols": ["app_id", "publisher", "revenue_proxy", "price_in_eur", "owners_avg"],
     },
     "model2": {
         "groupby": "publisher",
@@ -33,7 +33,7 @@ MODEL_CONFIGS = {
         "weights": {"positive_score": 0.5, "total": 0.5, "positive": 0.0},
         "top_n_clusters": 1,
         "agg": {"positive_score": "mean", "positive": "mean", "total": "mean"},
-        "source_cols": ["app_id", "name", "publisher", "total", "positive", "positive_score"],
+        "source_cols": ["app_id", "publisher", "total", "positive", "positive_score"],
         "fillna": {"positive": 0, "total": 0},
     },
     "model3": {
@@ -244,12 +244,12 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
     # ------------------------ Output ------------------------
     pd.set_option("display.max_rows", 50)
     final_pick = ranked.head(20)
-    final_pick.to_excel("data/clean data/publisher_ranked_consensus.xlsx", index=False)
+    final_pick.to_excel(out+"/publisher_ranked_consensus.xlsx", index=False)
 
     # If you want CSV outputs
-    ranked.to_csv("out/publisher_ranked_consensus.csv", index=False)
+    ranked.to_csv(out+"/publisher_ranked_consensus.csv", index=False)
     for m, (summary) in per_model_summaries.items():
-        summary.to_csv(f"out/{m}_cluster_summary.csv")
+        summary.to_csv(out+f"/{m}_cluster_summary.csv")
 
     return ranked, per_model_summaries
 def main():
