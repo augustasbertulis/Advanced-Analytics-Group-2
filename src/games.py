@@ -17,10 +17,13 @@ import re
 from functools import lru_cache
 from pathlib import Path
 import pandas as pd
+from paths import PROCESSED_DATA_DIR, RAW_DATA_DIR
 
 #-------------------- File paths (adjust if needed) --------------------
-input_file = "data/raw data/steam-insights-main/games.csv"
-output_file = "data/clean data/games_clean.csv"
+input_file = RAW_DATA_DIR / "games.csv"
+output_file = PROCESSED_DATA_DIR / "games_clean.csv"
+# input_file = "data/raw data/steam-insights-main/games.csv"
+# output_file = "data/clean data/games_clean.csv"
 #input_file = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/games.csv"
 #output_file = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/games_clean.csv"
 #input_file = r"C:\Users\baugu\Dokumentai\GitHub\Advanced-Analytics-Group-2\data\raw data\steam-insights-main\games\games.csv"

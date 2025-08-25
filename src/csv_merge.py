@@ -3,14 +3,17 @@ import os
 import pandas as pd
 from functools import reduce
 import glob
-
+from paths import PROCESSED_DATA_DIR, DATA_DIR
 
 # ---------------------------------------------------------------------
 # DEFAULT CONFIG
 # ---------------------------------------------------------------------
-input_folder_default = "data/clean data"   # folder containing multiple CSVs
-output_file_default = "data/clean data/combined.csv"
 
+input_folder_default = PROCESSED_DATA_DIR
+output_file_default = PROCESSED_DATA_DIR / "combined.csv"
+
+# input_folder_default = "data/clean data/"
+# output_file_default = "data/clean data/combined.csv"
 
 # ---------------------------------------------------------------------
 # CORE PIPELINE

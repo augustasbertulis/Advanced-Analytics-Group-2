@@ -1,7 +1,11 @@
 import pandas as pd
+from paths import PROCESSED_DATA_DIR, RAW_DATA_DIR
 
-INPUT = "data/raw data/steam-insights-main/promotional.csv"
-OUTPUT_CSV = "data/clean data/promotional_clean.csv"
+#-------------------- File paths (adjust if needed) --------------------
+INPUT = RAW_DATA_DIR / "promotional.csv"
+OUTPUT_CSV = PROCESSED_DATA_DIR / "promotional_clean.csv"
+# INPUT = "data/raw data/steam-insights-main/promotional.csv"
+# OUTPUT_CSV = "data/clean data/promotional_clean.csv"
 
 
 def clean_promotional_data(input_path: str, output_path: str) -> None:
