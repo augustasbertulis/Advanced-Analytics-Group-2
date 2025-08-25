@@ -1,4 +1,4 @@
-# run_two_kmeans_models.py
+# run_all_kmeans.py
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -8,6 +8,7 @@ from paths import PROCESSED_DATA_DIR, DATA_DIR
 
 # --------------------------- Config ---------------------------
 IMPORT_PATH = PROCESSED_DATA_DIR / "combined_clean.csv"
+KPI_CSV_PATH = PROCESSED_DATA_DIR / "publisher_kpis.csv"
 out = PROCESSED_DATA_DIR
 
 MODEL_CONFIGS = {
@@ -56,12 +57,11 @@ MODEL_CONFIGS = {
         },
         "source_cols": None,  # constructed after feature engineering
     },
-    # ------------------ New model5: Risk ------------------
     "model5": {
         "groupby": "publisher",
         "features": ["num_developers", "num_languages", "num_games"],
         "k": 3,
-        "weights": {"num_developers": -0.4, "num_languages": -0.3, "num_games": 0.3},  # fewer devs/langs → higher risk, more games → lower risk
+        "weights": {"num_developers": -0.4, "num_languages": -0.3, "num_games": 0.3},
         "top_n_clusters": 1,
         "agg": {"num_developers": "mean", "num_languages": "mean", "num_games": "mean"},
         "source_cols": ["publisher", "num_developers", "num_languages", "num_games"],
@@ -73,7 +73,7 @@ MODEL_VOTE_WEIGHTS = {
     "model2": 0.15,
     "model3": 0.3,
     "model4": 0.15,
-    "model5": 0.1,  # small weight for risk
+    "model5": 0.1,
 }
 
 # ------------------------ Helpers ------------------------
@@ -102,28 +102,30 @@ def best_clusters_by_score(df_grouped: pd.DataFrame, cluster_col: str, features:
     top_clusters = summary["score"].sort_values(ascending=False).head(top_n).index
     return top_clusters, summary
 
-def load_risk_data(df: pd.DataFrame, risk_csv_path: str):
-    """
-    Merge additional risk data (num_developers, num_languages, num_games) per publisher.
-    """
-    risk_df = pd.read_csv(risk_csv_path)
-    required_cols = ["publisher", "num_developers", "num_languages", "num_games"]
-    missing_cols = [c for c in required_cols if c not in risk_df.columns]
+def load_risk_data_from_kpis(df: pd.DataFrame, kpis_csv_path: str):
+    kpis_df = pd.read_csv(kpis_csv_path)
+    required_cols = ["publisher", "unique_developers", "games_per_pub", "languages_per_pub"]
+    missing_cols = [c for c in required_cols if c not in kpis_df.columns]
     if missing_cols:
-        raise ValueError(f"Risk CSV missing columns: {missing_cols}")
-    df = df.merge(risk_df, on="publisher", how="left")
+        raise ValueError(f"KPIs CSV missing columns: {missing_cols}")
+    kpis_df = kpis_df.rename(columns={
+        "unique_developers": "num_developers",
+        "games_per_pub": "num_games",
+        "languages_per_pub": "num_languages"
+    })
+    df = df.merge(kpis_df, on="publisher", how="left")
     df[["num_developers", "num_languages", "num_games"]] = df[["num_developers", "num_languages", "num_games"]].fillna(0)
     return df
 
 # ------------------------ Main function ------------------------
 def run_all_kmeans(import_path: str = IMPORT_PATH,
-                   risk_csv_path: str = DATA_DIR / "publisher_risk.csv",
+                   kpis_csv_path: str = KPI_CSV_PATH,
                    model_configs: dict = MODEL_CONFIGS,
                    vote_weights: dict = MODEL_VOTE_WEIGHTS):
     df = pd.read_csv(import_path, low_memory=False)
 
-    # Load risk data for model5
-    df = load_risk_data(df, risk_csv_path)
+    # Load risk data for model5 from KPI CSV
+    df = load_risk_data_from_kpis(df, kpis_csv_path)
 
     # Feature engineering
     if "owners_avg" not in df.columns:
@@ -139,7 +141,6 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
     else:
         df["growth_potential"] = np.nan
 
-    # Null safety
     fill_cols = ["revenue_proxy", "price_in_eur", "owners_avg", "positive_score", "positive",
                  "total", "active_engagement_score", "concurrent_users_yesterday", "growth_potential"]
     df[fill_cols] = df[fill_cols].fillna(0)

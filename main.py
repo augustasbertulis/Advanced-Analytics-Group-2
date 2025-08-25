@@ -17,6 +17,7 @@ from src import steamspy_insights
 from src import tags
 from src import csv_merge
 from src import further_preprocess
+from src import risk_kpi_calculator
 import model
 
 if __name__ == "__main__":
@@ -30,4 +31,5 @@ if __name__ == "__main__":
     tags.main()
     csv_merge.main()
     further_preprocess.main()
+    risk_kpi_calculator.main()
     model.main()
