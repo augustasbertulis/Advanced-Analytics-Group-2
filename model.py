@@ -75,10 +75,10 @@ MODEL_CONFIGS = {
 # Optional **model-level** weights (for weighted voting across models)
 # If you don't want weighted voting, leave as None.
 MODEL_VOTE_WEIGHTS = {
-    "model1": 1.0,
-    "model2": 1.0,
-    "model3": 1.0,
-    "model4": 1.0,
+    "model1": 0.4,
+    "model2": 0.15,
+    "model3": 0.3,
+    "model4": 0.15,
 }
 
 # ------------------------ Helpers ------------------------
@@ -141,7 +141,7 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
     else:
         df["release_date"] = pd.NaT
 
-    today = pd.Timestamp(datetime.today().date())
+    today = pd.Timestamp("2025-08-25")
     df["days_since_release"] = (today - df["release_date"]).dt.days
     df["days_since_release"] = df["days_since_release"].replace(0, 1)  # avoid div by zero
 
@@ -193,6 +193,9 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
 
         # aggregate per publisher (or group_col)
         agg = cfg.get("agg")
+        grouped = sub.groupby(group_col, as_index=False).agg(agg)
+        grouped = grouped.sort_values(by=[group_col]).reset_index(drop=True)
+
         if agg is None:
             agg = {f: "mean" for f in feats}
         grouped = sub.groupby(group_col, as_index=False).agg(agg)
@@ -237,10 +240,13 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
         )
 
     # Sort by consensus
-    sort_cols = ["votes"]
+    sort_cols = []
+    ascending = []
     if "weighted_votes" in merged.columns:
-        sort_cols = ["weighted_votes", "votes"]
-    ranked = merged.sort_values(sort_cols, ascending=False)
+        sort_cols = ["weighted_votes", "votes"];ascending += [False, False]
+    sort_cols += ["votes", "publisher"]
+    ascending += [False, True]
+    ranked = merged.sort_values(sort_cols, ascending=ascending)
 
     # ------------------------ Output ------------------------
     pd.set_option("display.max_rows", 50)
