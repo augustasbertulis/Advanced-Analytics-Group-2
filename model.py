@@ -4,10 +4,13 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.cluster import KMeans
 from datetime import datetime
+from paths import PROCESSED_DATA_DIR, DATA_DIR
+from sklearn.metrics import silhouette_score
+import matplotlib.pyplot as plt
 
 # --------------------------- Config ---------------------------
-IMPORT_PATH = "data/clean data/combined_clean.csv"
-out = "data/clean data/"
+IMPORT_PATH = PROCESSED_DATA_DIR / "combined_clean.csv"
+out = PROCESSED_DATA_DIR
 
 # Per-model config
 # - features: columns used for k-means (after aggregation)
@@ -20,7 +23,7 @@ MODEL_CONFIGS = {
     "model1": {
         "groupby": "publisher",
         "features": ["revenue_proxy", "price_in_eur", "owners_avg"],
-        "k": 4,
+        "k": 4,  # Elbow ~3-4 → keep 4 for finer segmentation
         "weights": {"revenue_proxy": 0.5, "owners_avg": 0.4, "price_in_eur": -0.1},
         "top_n_clusters": 1,
         "agg": {"revenue_proxy": "mean", "price_in_eur": "mean", "owners_avg": "mean"},
@@ -29,7 +32,7 @@ MODEL_CONFIGS = {
     "model2": {
         "groupby": "publisher",
         "features": ["positive_score", "positive", "total"],
-        "k": 4,
+        "k": 4,  # Elbow ~3-4 → keep 4 for finer segmentation
         "weights": {"positive_score": 0.5, "total": 0.5, "positive": 0.0},
         "top_n_clusters": 1,
         "agg": {"positive_score": "mean", "positive": "mean", "total": "mean"},
@@ -40,9 +43,7 @@ MODEL_CONFIGS = {
         # Your KPIs model: engagement, concurrents, owners
         "groupby": "publisher",
         "features": ["active_engagement_score", "concurrent_users_yesterday", "owners_avg"],
-        "k": 4,
-        # >>> New weights applied here <<<
-        # Emphasize engagement & concurrents; owners is useful but slightly less predictive of activity.
+        "k": 4,  # Elbow ~3-4 → keep 4 for finer segmentation
         "weights": {"active_engagement_score": 0.5, "concurrent_users_yesterday": 0.3, "owners_avg": 0.2},
         "top_n_clusters": 1,
         "agg": {
@@ -56,9 +57,7 @@ MODEL_CONFIGS = {
         # Growth-potential model: growth per day + concurrents + owners
         "groupby": "publisher",
         "features": ["growth_potential", "concurrent_users_yesterday", "owners_avg"],
-        "k": 3,
-        # >>> New weights applied here <<<
-        # Emphasize growth_potential; concurrents matter; owners provides base scale.
+        "k": 3,  # Elbow ~3
         "weights": {"growth_potential": 0.6, "concurrent_users_yesterday": 0.3, "owners_avg": 0.1},
         "top_n_clusters": 1,
         "agg": {
@@ -66,18 +65,17 @@ MODEL_CONFIGS = {
             "owners_avg": "mean",
             "concurrent_users_yesterday": "mean",
         },
-        # source_cols built from base df (we compute growth_potential below)
         "source_cols": None,  # constructed after feature engineering
     },
 }
 
-# Optional **model-level** weights (for weighted voting across models)
+# Optional *model-level* weights (for weighted voting across models)
 # If you don't want weighted voting, leave as None.
 MODEL_VOTE_WEIGHTS = {
-    "model1": 1.0,
-    "model2": 1.0,
-    "model3": 1.0,
-    "model4": 1.0,
+    "model1": 0.4,
+    "model2": 0.15,
+    "model3": 0.3,
+    "model4": 0.15,
 }
 
 # ------------------------ Helpers ------------------------
@@ -99,6 +97,35 @@ def minmax_weighted_score(summary_df: pd.DataFrame, weights: dict) -> pd.Series:
 
     score = sum(scaled_df[col] * w for col, w in weights.items() if col in scaled_df.columns)
     return score
+
+
+def elbow_curve_all(models_data: dict, k_max=10, out_dir=None):
+    """
+    Plot elbow curves (SSE vs k) for all models in one figure (stacked/overlayed).
+    models_data: dict {model_key: X_scaled}
+    """
+    plt.figure(figsize=(8,6))
+
+    Ks = range(1, k_max+1)
+    for model_key, X_scaled in models_data.items():
+        sse = []
+        for k in Ks:
+            kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
+            kmeans.fit(X_scaled)
+            sse.append(kmeans.inertia_)
+        plt.plot(Ks, sse, marker='o', label=model_key)
+
+    plt.xlabel("Number of clusters (k)")
+    plt.ylabel("SSE (Inertia)")
+    plt.title("Elbow Curves – All Models")
+    plt.legend()
+    plt.grid(True)
+
+    if out_dir:
+        plt.savefig(out_dir / "elbow_curves_all.png", dpi=150, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()
 
 def run_kmeans_model(df_grouped: pd.DataFrame, features: list, k: int, label_name: str) -> pd.DataFrame:
     """
@@ -123,6 +150,7 @@ def best_clusters_by_score(df_grouped: pd.DataFrame, cluster_col: str, features:
     summary["score"] = minmax_weighted_score(summary[features], weights)
     top_clusters = summary["score"].sort_values(ascending=False).head(top_n).index
     return top_clusters, summary
+
 def run_all_kmeans(import_path: str = IMPORT_PATH,
                           model_configs: dict = MODEL_CONFIGS,
                           vote_weights: dict = MODEL_VOTE_WEIGHTS,
@@ -140,7 +168,7 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
     else:
         df["release_date"] = pd.NaT
 
-    today = pd.Timestamp(datetime.today().date())
+    today = pd.Timestamp("2025-08-25")
     df["days_since_release"] = (today - df["release_date"]).dt.days
     df["days_since_release"] = df["days_since_release"].replace(0, 1)  # avoid div by zero
 
@@ -170,6 +198,8 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
     per_model_flags = {}           # publisher → is_best flag per model
     per_model_summaries = {}       # cluster summaries incl. score per model
     per_model_cluster_cols = {}    # cluster column names for each model
+    robustness_stats = {}          # model robustness check
+    models_data = {}               # for elbow curve plotting
 
     for model_key, cfg in MODEL_CONFIGS.items():
         group_col = cfg["groupby"]
@@ -192,6 +222,9 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
 
         # aggregate per publisher (or group_col)
         agg = cfg.get("agg")
+        grouped = sub.groupby(group_col, as_index=False).agg(agg)
+        grouped = grouped.sort_values(by=[group_col]).reset_index(drop=True)
+
         if agg is None:
             agg = {f: "mean" for f in feats}
         grouped = sub.groupby(group_col, as_index=False).agg(agg)
@@ -199,6 +232,17 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
         # run k-means
         cluster_col = f"cluster_{model_key}"
         grouped = run_kmeans_model(grouped, feats, k, cluster_col)
+
+        # Robustness check
+        X = np.nan_to_num(grouped[feats].to_numpy(), nan=0.0)
+        X_scaled = StandardScaler().fit_transform(X)
+        labels = grouped[cluster_col]
+
+        robustness_stats[model_key] = {
+            "silhouette": silhouette_score(X_scaled, labels) if len(set(labels)) > 1 else None,
+        }
+
+        models_data[model_key] = X_scaled
 
         # score clusters & mark best
         top_clusters, summary = best_clusters_by_score(grouped, cluster_col, feats, weights, top_n=top_n)
@@ -209,8 +253,10 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
         per_model_summaries[model_key] = summary
         per_model_cluster_cols[model_key] = (grouped[[group_col, cluster_col]], feats)
 
+    # ---- Plot combined elbow curves once after all models ----
+    elbow_curve_all(models_data, k_max=10, out_dir=out)
+
     # ------------------------ Merge & voting ------------------------
-    # Outer-join best flags across all models
     merged = None
     for model_key, flags in per_model_flags.items():
         if merged is None:
@@ -236,24 +282,32 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
         )
 
     # Sort by consensus
-    sort_cols = ["votes"]
+    sort_cols = []
+    ascending = []
     if "weighted_votes" in merged.columns:
-        sort_cols = ["weighted_votes", "votes"]
-    ranked = merged.sort_values(sort_cols, ascending=False)
+        sort_cols = ["weighted_votes", "votes"];ascending += [False, False]
+    sort_cols += ["votes", "publisher"]
+    ascending += [False, True]
+    ranked = merged.sort_values(sort_cols, ascending=ascending)
 
     # ------------------------ Output ------------------------
     pd.set_option("display.max_rows", 50)
     final_pick = ranked.head(20)
-    final_pick.to_excel("data/clean data/publisher_ranked_consensus.xlsx", index=False)
+    final_pick.to_excel(out / "publisher_ranked_consensus.xlsx", index=False)
 
     # If you want CSV outputs
-    ranked.to_csv("out/publisher_ranked_consensus.csv", index=False)
+    ranked.to_csv(out / "publisher_ranked_consensus.csv", index=False)
     for m, (summary) in per_model_summaries.items():
-        summary.to_csv(f"out/{m}_cluster_summary.csv")
+        summary.to_csv(out / f"{m}_cluster_summary.csv")
 
-    return ranked, per_model_summaries
+    print("\n=== Model Robustness Stats ===")
+    for m, stats in robustness_stats.items():
+        print(f"{m}: {stats}")
+
+    return ranked, per_model_summaries, robustness_stats
+
 def main():
     run_all_kmeans()
+
 if __name__ == "__main__":
     main()
-
