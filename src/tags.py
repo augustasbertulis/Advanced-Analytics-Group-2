@@ -1,10 +1,15 @@
 import pandas as pd
+from paths import PROCESSED_DATA_DIR, RAW_DATA_DIR
+
+#-------------------- File paths (adjust if needed) --------------------
+INPUT = RAW_DATA_DIR / "tags.csv"
+OUTPUT_CSV = PROCESSED_DATA_DIR / "tags_clean.csv"
 
 #Path Fabrizio:
 #INPUT = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/tags.csv"
 #OUTPUT_CSV = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/tags_clean.csv"
-INPUT = "data/raw data/steam-insights-main/tags.csv"
-OUTPUT_CSV = "data/clean data/tags_clean.csv"
+# INPUT = "data/raw data/steam-insights-main/tags.csv"
+# OUTPUT_CSV = "data/clean data/tags_clean.csv"
 
 def process_data(df):
     # Tags pro app_id zählen
