@@ -2,12 +2,12 @@
 import pandas as pd
 from pathlib import Path
 import csv
+from paths import PROCESSED_DATA_DIR, RAW_DATA_DIR
 
-
-#INPUT = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/descriptions.csv"
-#OUTPUT_CSV = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/descriptions_clean.csv"
-INPUT = "data/raw data/steam-insights-main/descriptions.csv"
-OUTPUT_CSV = "data/clean data/descriptions_clean.csv"
+INPUT = RAW_DATA_DIR / "descriptions.csv"
+OUTPUT_CSV = PROCESSED_DATA_DIR / "descriptions_clean.csv"
+# INPUT = "data/raw data/steam-insights-main/descriptions.csv"
+# OUTPUT_CSV = "data/clean data/descriptions_clean.csv"
 
 def process_data(df):
     # Typisieren

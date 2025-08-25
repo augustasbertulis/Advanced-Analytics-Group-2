@@ -8,11 +8,16 @@ import csv
 import re
 import pandas as pd
 from pathlib import Path
+from paths import PROCESSED_DATA_DIR, RAW_DATA_DIR
+
+#-------------------- File paths (adjust if needed) --------------------
+INPUT = RAW_DATA_DIR / "reviews.csv"
+OUTPUT = PROCESSED_DATA_DIR / "reviews_clean.csv"
 
 #INPUT = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/raw data/reviews.csv"
 #OUTPUT = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/reviews_clean.csv"
-INPUT = "data/raw data/steam-insights-main/reviews.csv"
-OUTPUT = "data/clean data/reviews_clean.csv"
+# INPUT = "data/raw data/steam-insights-main/reviews.csv"
+# OUTPUT = "data/clean data/reviews_clean.csv"
 ID_OK = re.compile(r"^\d+$")
 
 # values that should always become null

@@ -11,6 +11,9 @@ from paths import PROCESSED_DATA_DIR, DATA_DIR
 DEFAULT_IMPORT_PATH = PROCESSED_DATA_DIR / "combined.csv"
 DEFAULT_OUTPUT_PATH = PROCESSED_DATA_DIR / "combined_clean.csv"
 
+# DEFAULT_IMPORT_PATH = "data/clean data/combined.csv"
+# DEFAULT_OUTPUT_PATH = "data/clean data/combined_clean.csv"
+
 FX = {
     "EUR": 1.0, "USD": 0.85, "GBP": 1.17, "MXN": 0.05, "RUB": 0.011, "IDR": 0.000056,
     "PLN": 0.22, "BRL": 0.17, "CNY": 0.12, "AUD": 0.55, "SGD": 0.62, "ILS": 0.23
