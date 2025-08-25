@@ -8,7 +8,7 @@ from paths import PROCESSED_DATA_DIR, DATA_DIR
 
 # --------------------------- Config ---------------------------
 IMPORT_PATH = PROCESSED_DATA_DIR / "combined_clean.csv"
-out = DATA_DIR / "clean data/"
+out = PROCESSED_DATA_DIR
 
 # Per-model config
 # - features: columns used for k-means (after aggregation)
@@ -245,12 +245,12 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
     # ------------------------ Output ------------------------
     pd.set_option("display.max_rows", 50)
     final_pick = ranked.head(20)
-    final_pick.to_excel("data/clean data/publisher_ranked_consensus.xlsx", index=False)
+    final_pick.to_excel(out / "publisher_ranked_consensus.xlsx", index=False)
 
     # If you want CSV outputs
-    ranked.to_csv("out/publisher_ranked_consensus.csv", index=False)
+    ranked.to_csv(out / "publisher_ranked_consensus.csv", index=False)
     for m, (summary) in per_model_summaries.items():
-        summary.to_csv(f"out/{m}_cluster_summary.csv")
+        summary.to_csv(out / f"{m}_cluster_summary.csv")
 
     return ranked, per_model_summaries
 def main():
