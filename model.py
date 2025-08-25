@@ -74,10 +74,10 @@ MODEL_CONFIGS = {
 # Optional **model-level** weights (for weighted voting across models)
 # If you don't want weighted voting, leave as None.
 MODEL_VOTE_WEIGHTS = {
-    "model1": 1.0,
-    "model2": 1.0,
-    "model3": 1.0,
-    "model4": 1.0,
+    "model1": 0.4,
+    "model2": 0.15,
+    "model3": 0.3,
+    "model4": 0.15,
 }
 
 # ------------------------ Helpers ------------------------
@@ -253,9 +253,9 @@ def run_all_kmeans(import_path: str = IMPORT_PATH,
     final_pick.to_excel("data/clean data/publisher_ranked_consensus.xlsx", index=False)
 
     # If you want CSV outputs
-    ranked.to_csv("out/publisher_ranked_consensus.csv", index=False)
-    for m, (summary) in per_model_summaries.items():
-        summary.to_csv(f"out/{m}_cluster_summary.csv")
+    ranked.to_csv("data/clean data/publisher_ranked_consensus.csv", index=False)
+    #for m, (summary) in per_model_summaries.items():
+    #    summary.to_csv(f"out/{m}_cluster_summary.csv")
 
     return ranked, per_model_summaries
 def main():
