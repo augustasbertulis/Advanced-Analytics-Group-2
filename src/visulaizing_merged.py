@@ -1,8 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from paths import PROCESSED_DATA_DIR, RAW_DATA_DIR
 
+#-------------------- File paths (adjust if needed) --------------------
+import_path = PROCESSED_DATA_DIR / "combined.csv"
 # Load your dataset
-import_path = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/combined.csv"
+# import_path = r"C:/Users/test_/Documents/GitHub/Advanced-Analytics-Group-2/data/processed data/combined.csv"
 df = pd.read_csv(import_path, low_memory=False)
 
 # --- Calculate NaN percentage per column ---
