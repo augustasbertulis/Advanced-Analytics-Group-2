@@ -3,13 +3,14 @@ import pandas as pd
 from paths import PROCESSED_DATA_DIR
 
 # Input paths
-CONS_PATH = PROCESSED_DATA_DIR / "publisher_ranked_consensus.csv"
+CONS_PATH = PROCESSED_DATA_DIR / "publisher_ranked_consensus.xlsx"
 GAMES_PATH = PROCESSED_DATA_DIR / "combined_clean.csv"
 OUT_PATH = PROCESSED_DATA_DIR / "attributes.csv"
 
 # Load datasets
-consensus = pd.read_csv(CONS_PATH, low_memory=False)
+consensus = pd.read_excel(CONS_PATH)   # <-- FIXED: read_excel for xlsx
 games = pd.read_csv(GAMES_PATH, low_memory=False)
+
 
 # --- Add publisher_id if missing ---
 if "publisher_id" not in consensus.columns:
@@ -24,16 +25,13 @@ games["publisher"] = games["publisher"].astype(str).str.strip()
 consensus = consensus.head(20)
 
 # --- Feature engineering for games ---
-if "owners_avg" not in games.columns:
-    games["owners_avg"] = (games["owners_min"] + games["owners_max"]) / 2
-
+# Growth potential
 if "release_date" in games.columns:
     games["release_date"] = pd.to_datetime(games["release_date"], errors="coerce")
     today = pd.Timestamp("2025-08-25")
     games["days_since_release"] = (today - games["release_date"]).dt.days.replace(0, 1)
 else:
     games["days_since_release"] = 1
-
 if {"owners_max", "owners_min"}.issubset(games.columns):
     games["growth_potential"] = (games["owners_max"] - games["owners_min"]) / games["days_since_release"]
 else:
@@ -53,7 +51,6 @@ elif "genres" in df.columns:
     df["genres_combined"] = df["genres"].fillna("")
 else:
     df["genres_combined"] = ""
-
 df["genres_combined"] = (
     df["genres_combined"]
     .str.replace(r",\s+", ", ", regex=True)
@@ -63,7 +60,7 @@ df["genres_combined"] = (
 # --- Drop per-game fields ---
 df = df.drop(columns=["app_id", "name", "release_date", "genres_x", "genres_y", "genres"], errors="ignore")
 
-# --- KPI columns ---
+# --- KPI and numerical columns ---
 kpi_cols = [
     "recommendations", "price_in_eur", "owners_avg", "revenue_proxy",
     "positive", "total", "positive_score", "concurrent_users_yesterday",
@@ -87,5 +84,6 @@ publisher_summary = publisher_summary.round(2)
 
 # Save
 publisher_summary.to_csv(OUT_PATH, index=False)
+publisher_summary.to_excel(PROCESSED_DATA_DIR / "attributes.xlsx", index=False)
 
 print("Publisher summary saved to:", OUT_PATH)
