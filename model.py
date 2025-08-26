@@ -87,6 +87,31 @@ def minmax_weighted_score(summary_df: pd.DataFrame, weights: dict) -> pd.Series:
     score = sum(scaled_df[col] * w for col, w in weights.items() if col in scaled_df.columns)
     return score
 
+def elbow_curve_all(models_data: dict, k_max=10, out_dir=None):
+    """
+    Plot elbow curves (SSE vs k) for all models in one figure (stacked/overlayed).
+    models_data: dict {model_key: X_scaled}
+    """
+    plt.figure(figsize=(8,6))
+
+    Ks = range(1, k_max+1)
+    for model_key, X_scaled in models_data.items():
+        sse = []
+        for k in Ks:
+            kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
+            kmeans.fit(X_scaled)
+            sse.append(kmeans.inertia_)
+        plt.plot(Ks, sse, marker='o', label=model_key)
+    plt.xlabel("Number of clusters (k)")
+    plt.ylabel("SSE (Inertia)")
+    plt.title("Elbow Curves – All Models")
+    plt.legend()
+    plt.grid(True)
+    if out_dir:
+        plt.savefig(out_dir / "elbow_curves_all.png", dpi=150, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()
 def run_kmeans_model(df_grouped: pd.DataFrame, features: list, k: int, label_name: str) -> pd.DataFrame:
     X = df_grouped[features].to_numpy()
     X = np.nan_to_num(X, nan=0.0)
