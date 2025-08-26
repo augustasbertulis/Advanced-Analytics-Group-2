@@ -1,6 +1,6 @@
 ## Advanced-Analytics Group 2
 # AI Disclosure
-This project contains content generated or assisted by AI for informational purposes.
+This project contains content generated or assisted by AI.
 
 # Project Overview
 This project clusters game publishers based on performance KPIs such as **revenue, reviews, and engagement** using **K-Means clustering** to identify **top-performing publishers**.  
