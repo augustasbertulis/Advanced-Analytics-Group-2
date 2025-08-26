@@ -8,7 +8,7 @@
 """
 
 from src.preprocessing import categories, descriptions, reviews, promotional, steamspy_insights, tags, genres, games, \
-    further_preprocess, csv_merge
+    further_preprocess, csv_merge, visulaizing_merged
 from src.processing import risk_kpi_calculator, model, get_attribute_table, plot_attribute_table, sensitivity_analysis, markowitz_model
 
 if __name__ == "__main__":
@@ -30,3 +30,4 @@ if __name__ == "__main__":
     sensitivity_analysis.run_model_weight_sensitivity()
     get_attribute_table.main()
     plot_attribute_table.main()
+    visulaizing_merged.main()

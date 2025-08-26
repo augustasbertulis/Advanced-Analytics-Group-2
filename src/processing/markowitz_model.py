@@ -141,7 +141,7 @@ def plot_perturbed_frontier(portfolio_df, risk_factors, n_perturb=200, perturb_s
 
 
 def run_pseudo_markowitz():
-    ranked, per_model_summaries = run_all_kmeans(
+    ranked, per_model_summaries, robustness_stats = run_all_kmeans(
         import_path=IMPORT_PATH,
         kpis_csv_path=KPI_CSV_PATH,
     )
@@ -179,6 +179,7 @@ def run_pseudo_markowitz():
     # Plot perturbed portfolios
     risk_factors = ["num_developers", "num_languages", "num_games"]
     plot_perturbed_frontier(portfolio_df, risk_factors, n_perturb=200, perturb_scale=0.05)
+
 
 
 if __name__ == "__main__":
