@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 from paths import PROCESSED_DATA_DIR
-from model import (
+from src.processing.model import (
     run_kmeans_model,
     best_clusters_by_score,
     MODEL_CONFIGS,

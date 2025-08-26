@@ -25,7 +25,8 @@ To avoid arbitrarily selecting k, we evaluated cluster quality using:
 - `data/raw data/` : Contains the raw CSV files.  
 - `processed data/` : Folder where all outputs are stored (cluster assignments, summaries, visualizations, cleaned data).  
 - `main.py` : Script that runs the analysis.  
-- `README.md` : Documentation for the project.  
+- `README.md` : Documentation for the project.
+- `paths.py` : A small utility script that defines project data paths and ensures required directories exist.
 
 ---
 # How to Run

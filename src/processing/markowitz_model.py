@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import matplotlib.pyplot as plt
 from paths import PROCESSED_DATA_DIR
-from model import run_all_kmeans, load_risk_data_from_kpis, KPI_CSV_PATH, IMPORT_PATH
+from src.processing.model import run_all_kmeans, load_risk_data_from_kpis, KPI_CSV_PATH, IMPORT_PATH
 
 
 def build_pseudo_markowitz(

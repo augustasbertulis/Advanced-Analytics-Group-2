@@ -7,18 +7,9 @@
 @param:
 """
 
-from src import categories
-from src import descriptions
-from src import games
-from src import genres
-from src import promotional
-from src import reviews
-from src import steamspy_insights
-from src import tags
-from src import csv_merge
-from src import further_preprocess
-from src import risk_kpi_calculator
-import model
+from src.preprocessing import categories, descriptions, reviews, promotional, steamspy_insights, tags, genres, games, \
+    further_preprocess, csv_merge
+from src.processing import risk_kpi_calculator, model, get_attribute_table, plot_attribute_table, sensitivity_analysis, markowitz_model
 
 if __name__ == "__main__":
     categories.main()
@@ -33,3 +24,9 @@ if __name__ == "__main__":
     further_preprocess.main()
     risk_kpi_calculator.main()
     model.main()
+    markowitz_model.run_pseudo_markowitz()
+
+    # added analytics
+    sensitivity_analysis.run_model_weight_sensitivity()
+    get_attribute_table.main()
+    plot_attribute_table.main()

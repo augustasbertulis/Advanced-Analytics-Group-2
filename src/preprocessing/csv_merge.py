@@ -23,22 +23,13 @@ def combine_csvs(input_folder: str, output_file: str) -> None:
     Load all cleaned CSVs from the input folder and merge them on 'app_id'.
     """
 
-    # Get a list of all CSV files in the folder (explicit load)
-    #des= pd.read_csv(input_folder+r"\descriptions_clean.csv")
-    #gam= pd.read_csv(input_folder+r"\games_clean.csv")
-    #gen= pd.read_csv(input_folder+r"\genres_clean.csv")
-    #pro= pd.read_csv(input_folder+r"\promotional_clean.csv")
-    #ste= pd.read_csv(input_folder+r"\steamspy_insights.csv")
-    #tag= pd.read_csv(input_folder+r"\tags_clean.csv")
-    #rev= pd.read_csv(input_folder+r"\reviews_clean.csv")
-
     des = pd.read_csv(os.path.join(input_folder, "descriptions_clean.csv"))
     gam = pd.read_csv(os.path.join(input_folder, "games_clean.csv"))
     gen = pd.read_csv(os.path.join(input_folder, "genres_clean.csv"))
     pro = pd.read_csv(os.path.join(input_folder, "promotional_clean.csv"))
     ste = pd.read_csv(os.path.join(input_folder, "steamspy_insights_clean.csv"))
     tag = pd.read_csv(os.path.join(input_folder, "tags_clean.csv"))
-    rev = pd.read_csv(os.path.join(input_folder, "reviews_clean.csv"))
+    rev = pd.read_csv(os.path.join(input_folder, "reviews_clean.csv"), dtype=str)  # ✅ Option 1 applied
     cat = pd.read_csv(os.path.join(input_folder, "categories_clean.csv"))
 
     # Start with games DataFrame

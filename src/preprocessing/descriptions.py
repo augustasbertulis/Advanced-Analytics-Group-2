@@ -21,10 +21,18 @@ def process_data(df):
     return df
 
 def main():
-    read_kwargs = dict(engine="python", sep=",", quotechar='"',
-                       quoting=csv.QUOTE_MINIMAL, skipinitialspace=True, encoding="utf-8-sig")
+    read_kwargs = dict(
+        engine="python",
+        sep=",",
+        quotechar='"',
+        quoting=csv.QUOTE_MINIMAL,
+        skipinitialspace=True,
+        encoding="utf-8-sig",
+        escapechar="\\",              # <-- added fix for broken quotes
+        on_bad_lines="skip"           # <-- skip problematic lines safely
+    )
     # Ganze Datei einlesen
-    df = pd.read_csv(INPUT, **read_kwargs, on_bad_lines="warn")
+    df = pd.read_csv(INPUT, **read_kwargs)
 
     # Daten verarbeiten
     df = process_data(df)
