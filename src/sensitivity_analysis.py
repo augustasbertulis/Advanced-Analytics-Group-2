@@ -1,7 +1,6 @@
-# sensitivity_model_weights_with_viz.py
+# sensitivity_model_weights.py (without visualization)
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from paths import PROCESSED_DATA_DIR
 from model import (
     run_kmeans_model,
@@ -35,10 +34,6 @@ def normalize_weights(weights):
     """Normalize weights so that sum(abs(weights)) = 1."""
     total = sum(abs(v) for v in weights.values())
     return {k: v/total for k, v in weights.items()}
-
-def format_weights(weights):
-    """Format a weight dict into a short string for display under bars."""
-    return ",".join([f"{v:.2f}" for v in weights.values()])
 
 # ---------------- MAIN ----------------
 def run_model_weight_sensitivity():
@@ -106,54 +101,6 @@ def run_model_weight_sensitivity():
     best_weights_df = pd.DataFrame(best_weights_records)
     best_weights_df.to_csv(OUT_DIR / "best_model_weights.csv", index=False)
     print("\nSaved best weights for all models to CSV.")
-
-    # ---------- Visualization ----------
-    for _, row in best_weights_df.iterrows():
-        model = row['model']
-        grouped, cluster_col, feats, _ = cluster_cache[model]  # Use features from clustering
-        best_weights = {f: row[f] for f in feats}
-
-        # Define standard configs
-        standard_configs = {
-            "Equal Weights": normalize_weights({f: 1/len(feats) for f in feats}),
-            "High Growth Potential": normalize_weights({f: 0.7 if f=="growth_potential" else 0.3/(len(feats)-1) for f in feats}),
-            "High Owners Avg": normalize_weights({f: 0.7 if f=="owners_avg" else 0.3/(len(feats)-1) for f in feats}),
-        }
-
-        all_configs = {**standard_configs, "Optimal (Found)": normalize_weights(best_weights)}
-
-        # Compute score for each configuration
-        scores = []
-        x_labels = []
-        for cfg_name, cfg_weights in all_configs.items():
-            top_clusters, summary = best_clusters_by_score(grouped, cluster_col, feats, cfg_weights, top_n=1)
-            if isinstance(summary, pd.DataFrame) and 'score' in summary.columns:
-                score = summary['score'].iloc[0]
-            else:
-                score = float(summary)
-            scores.append(score)
-            x_labels.append(f"{cfg_name}\n{format_weights(cfg_weights)}")
-
-        # Plot bar chart
-        plt.figure(figsize=(12, 6))
-        bars = plt.bar(x_labels, scores, color=['skyblue']*3 + ['orange'], alpha=0.8)
-
-        # Add score text above bars
-        for bar, score in zip(bars, scores):
-            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01, f"{score:.2f}",
-                     ha='center', va='bottom', fontsize=10)
-
-        # Ensure y-axis has some range
-        y_max = max(scores)*1.2
-        if y_max == 0:
-            y_max = 1.0
-        plt.ylim(0, y_max)
-
-        plt.ylabel("Score")
-        plt.title(f"{model}: Standard Configurations vs Optimal")
-        plt.xticks(rotation=30, ha='right')
-        plt.tight_layout()
-        plt.show()
 
 
 if __name__ == "__main__":

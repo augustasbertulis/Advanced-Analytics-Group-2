@@ -130,7 +130,7 @@ def plot_perturbed_frontier(portfolio_df, risk_factors, n_perturb=200, perturb_s
     plt.xlim(0.4, 0.65)
 
     plt.xlabel("Growth Potential")
-    plt.ylabel("Aggregate Risk (Model 5 exposures)")
+    plt.ylabel("Aggregate Risk")
     plt.title("Pseudo-Markowitz Portfolio vs Nearby Perturbed Portfolios")
     plt.legend()
     plt.grid(True)
