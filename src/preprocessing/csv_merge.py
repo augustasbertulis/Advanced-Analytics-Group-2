@@ -12,6 +12,7 @@ from paths import PROCESSED_DATA_DIR, DATA_DIR
 input_folder_default = PROCESSED_DATA_DIR
 output_file_default = PROCESSED_DATA_DIR / "combined.csv"
 
+
 # input_folder_default = "data/clean data/"
 # output_file_default = "data/clean data/combined.csv"
 
@@ -23,19 +24,23 @@ def combine_csvs(input_folder: str, output_file: str) -> None:
     Load all cleaned CSVs from the input folder and merge them on 'app_id'.
     """
 
+    # Load CSV files
     des = pd.read_csv(os.path.join(input_folder, "descriptions_clean.csv"))
     gam = pd.read_csv(os.path.join(input_folder, "games_clean.csv"))
     gen = pd.read_csv(os.path.join(input_folder, "genres_clean.csv"))
     pro = pd.read_csv(os.path.join(input_folder, "promotional_clean.csv"))
     ste = pd.read_csv(os.path.join(input_folder, "steamspy_insights_clean.csv"))
     tag = pd.read_csv(os.path.join(input_folder, "tags_clean.csv"))
-    rev = pd.read_csv(os.path.join(input_folder, "reviews_clean.csv"), dtype=str)  # ✅ Option 1 applied
+
+    # Set low_memory=False to resolve mixed types warning
+    rev = pd.read_csv(os.path.join(input_folder, "reviews_clean.csv"), low_memory=False)
+
     cat = pd.read_csv(os.path.join(input_folder, "categories_clean.csv"))
 
     # Start with games DataFrame
     df = gam.copy()
 
-    # Inspect the first few rows (merging step by step)
+    # Merge step by step
     df = df.merge(des, on="app_id", how="left")
     df = df.merge(gen, on="app_id", how="left")
     df = df.merge(pro, on="app_id", how="left")
