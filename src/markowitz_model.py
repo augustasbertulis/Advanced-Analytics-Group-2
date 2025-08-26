@@ -118,23 +118,26 @@ def plot_perturbed_frontier(portfolio_df, risk_factors, n_perturb=200, perturb_s
         perturbed_returns.append(port_ret)
         perturbed_risks.append(port_risk)
 
-    # Plot perturbed portfolios
-    plt.scatter(perturbed_returns, perturbed_risks, color="gray", alpha=0.4, s=30, label="Perturbed Portfolios")
+    # Plot perturbed portfolios (swap x and y)
+    plt.scatter(perturbed_risks, perturbed_returns, color="gray", alpha=0.4, s=30, label="Perturbed Portfolios")
 
-    # Plot pseudo-Markowitz portfolio
+    # Plot pseudo-Markowitz portfolio (swap x and y)
     port_return = (portfolio_df["mu"] * w_opt).sum()
     port_risk = np.sqrt(w_opt.T @ np.diag(portfolio_df["risk_agg"] ** 2) @ w_opt)
-    plt.scatter(port_return, port_risk, color="red", marker="*", s=200, label="Pseudo-Markowitz Portfolio")
+    plt.scatter(port_risk, port_return, color="red", marker="*", s=200, label="Pseudo-Markowitz Portfolio")
 
-    # Limit x-axis
-    plt.xlim(0.4, 0.65)
+    # Set axes limits
+    plt.xlim(0.15, 0.40)  # x-axis: Aggregate Risk
+    plt.ylim(0.4, 0.65)   # y-axis: Growth Potential
 
-    plt.xlabel("Growth Potential")
-    plt.ylabel("Aggregate Risk")
+    plt.xlabel("Aggregate Risk")
+    plt.ylabel("Growth Potential")
     plt.title("Pseudo-Markowitz Portfolio vs Nearby Perturbed Portfolios")
     plt.legend()
     plt.grid(True)
     plt.show()
+
+
 
 
 def run_pseudo_markowitz():

@@ -15,6 +15,9 @@ To avoid arbitrarily selecting k, we evaluated cluster quality using:
 - Silhouette Score: Evaluates how well a publisher fits into its assigned cluster compared to other clusters. Scores range from -1 (bad) to +1 (excellent).
 - We combined these metrics to make an informed choice for the number of clusters.
 
+- After clustering:
+- Explored how changing the importance of different KPIs affects clustering results and identified the most influential features through a sensitivity analysis.
+- Created a risk-adjusted portfolio using a pseudo markowitz model of publishers using the clustering output, showing how top performers could be weighted to maximize growth while managing risk.
 
 ---
 
